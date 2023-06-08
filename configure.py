@@ -37,6 +37,9 @@
 #   --include=path    use -Ipath when compiling
 #   --lib_path=path   use -Lpath when linking
 #   --lib=xxx         use -lxxx when linking
+#   -nr_radiation        turn on radiation transport
+#   -implicit_radiation implicit radiation transport module
+#   -cr               enable cosmic ray transport
 # ----------------------------------------------------------------------------------------
 
 # Modules
@@ -204,6 +207,24 @@ parser.add_argument('-h5double',
 parser.add_argument('--hdf5_path',
                     default='',
                     help='path to HDF5 libraries')
+
+# -radiation argument
+parser.add_argument('-nr_radiation',
+                    action='store_true',
+                    default=False,
+                    help='enable non-relativistic radiative transfer')
+
+# -radiation argument
+parser.add_argument('-implicit_radiation',
+                    action='store_true',
+                    default=False,
+                    help='enable radiative transfer')
+
+# -cosmic ray argument
+parser.add_argument('-cr',
+                    action='store_true',
+                    default=False,
+                    help='enable cosmic ray transport')
 
 # The main choices for --cxx flag, using "ctype[-suffix]" formatting, where "ctype" is the
 # major family/suite/group of compilers and "suffix" may represent variants of the
@@ -444,6 +465,26 @@ if args['g']:
     makefile_options['RSOLVER_FILE'] += '_rel'
     if not args['t']:
         makefile_options['RSOLVER_FILE'] += '_no_transform'
+
+
+# -radiation argument
+if args['nr_radiation']:
+    definitions['NR_RADIATION_ENABLED'] = '1'
+else:
+    definitions['NR_RADIATION_ENABLED'] = '0'
+
+if args['implicit_radiation']:
+    definitions['IM_RADIATION_ENABLED'] = '1'
+else:
+    definitions['IM_RADIATION_ENABLED'] = '0'
+
+# -cr argument
+if args['cr']:
+    definitions['CR_ENABLED'] = '1'
+else:
+    definitions['CR_ENABLED'] = '0'
+
+
 
 # --cxx=[name] argument
 if args['cxx'] == 'g++':
@@ -818,6 +859,9 @@ print('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF'))
 print('  Number of scalars:          ' + args['nscalars'])
 print('  Special relativity:         ' + ('ON' if args['s'] else 'OFF'))
 print('  General relativity:         ' + ('ON' if args['g'] else 'OFF'))
+print('  Radiative Transfer:         ' + ('ON' if args['nr_radiation'] else 'OFF'))
+print('  Implicit Radiation:         ' + ('ON' if args['implicit_radiation'] else 'OFF'))
+print('  Cosmic Ray Transport:       ' + ('ON' if args['cr'] else 'OFF'))
 print('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF'))
 print('  Self-Gravity:               ' + self_grav_string)
 print('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF'))
@@ -836,3 +880,40 @@ if args['hdf5']:
 print('  Compiler:                   ' + args['cxx'])
 print('  Compilation command:        ' + makefile_options['COMPILER_COMMAND'] + ' '
       + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'])
+
+
+# write the configuration optitions into a log file
+flog=open('./configure.log', 'w')
+flog.write('Your Athena++ distribution has now been configured with the following options:' + '\n')
+flog.write('  Problem generator:          ' + args['prob'] + '\n')
+flog.write('  Coordinate system:          ' + args['coord'] + '\n')
+flog.write('  Equation of state:          ' + args['eos'] + '\n')
+flog.write('  Riemann solver:             ' + args['flux'] + '\n')
+flog.write('  Magnetic fields:            ' + ('ON' if args['b'] else 'OFF') + '\n')
+flog.write('  Number of scalars:          ' + args['nscalars'] + '\n')
+flog.write('  Special relativity:         ' + ('ON' if args['s'] else 'OFF') + '\n')
+flog.write('  General relativity:         ' + ('ON' if args['g'] else 'OFF')+ '\n')
+flog.write('  Radiative Transfer:         ' + ('ON' if args['nr_radiation'] else 'OFF') + '\n')
+flog.write('  Implicit Radiation:         ' + ('ON' if args['implicit_radiation'] else 'OFF') + '\n')
+flog.write('  Cosmic Ray Transport:       ' + ('ON' if args['cr'] else 'OFF') + '\n')
+flog.write('  Frame transformations:      ' + ('ON' if args['t'] else 'OFF') + '\n')
+flog.write('  Self-Gravity:               ' + self_grav_string + '\n')
+flog.write('  Super-Time-Stepping:        ' + ('ON' if args['sts'] else 'OFF') + '\n')
+flog.write('  Debug flags:                ' + ('ON' if args['debug'] else 'OFF') + '\n')
+flog.write('  Code coverage flags:        ' + ('ON' if args['coverage'] else 'OFF') + '\n')
+flog.write('  Linker flags:               ' + makefile_options['LINKER_FLAGS'] + ' '
+      + makefile_options['LIBRARY_FLAGS'] + '\n')
+flog.write('  Floating-point precision:   ' + ('single' if args['float'] else 'double') + '\n')
+flog.write('  Number of ghost cells:      ' + args['nghost'] + '\n')
+flog.write('  MPI parallelism:            ' + ('ON' if args['mpi'] else 'OFF') + '\n')
+flog.write('  OpenMP parallelism:         ' + ('ON' if args['omp'] else 'OFF') + '\n')
+flog.write('  FFT:                        ' + ('ON' if args['fft'] else 'OFF') + '\n')
+flog.write('  HDF5 output:                ' + ('ON' if args['hdf5'] else 'OFF') + '\n')
+if args['hdf5']:
+    flog.write('  HDF5 precision:             ' + ('double' if args['h5double'] else 'single') + '\n')
+flog.write('  Compiler:                   ' + args['cxx'] + '\n')
+flog.write('  Compilation command:        ' + makefile_options['COMPILER_COMMAND'] + ' '
+      + makefile_options['PREPROCESSOR_FLAGS'] + ' ' + makefile_options['COMPILER_FLAGS'] + '\n')
+
+flog.close()
+
